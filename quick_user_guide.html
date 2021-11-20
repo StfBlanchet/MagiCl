@@ -1,0 +1,78 @@
+<h1>MagiClass</h1>
+
+<h2>General information</h2>
+<p>MagiClass is a Machine Learning Flask app that performs preprocessing, modeling and text classification tasks so to deliver a tagged dataset via its API.</p>
+<p>It automates the benchmarking of several classifiers so to pick the best one without extra effort.</p>
+<p>The current version is focused on English corpora and binary classification (e.g. spam vs. not spam).</p>
+
+<h2>Routes</h2>
+<p>MagiClass offers 3 sub-endpoints which need a directory name and a file name to be specified:</p>
+<ul>
+<li><strong>.../preprocess/{directory}/{filename}</strong><br>
+the name of the folder followed by the name of the csv file to be preprocessed.</li>
+<li><strong>.../model/{directory}/{filename}</strong><br>
+the name of the folder followed by the name of the clean json file to be split as train/test dataset.</li>
+<li><strong>.../classify/{directory}/{filename}</strong><br>
+the name of the folder followed by the name of clean json the file to be tagged.</li>
+</ul>
+
+<h2>Modules</h2>
+<h3>1. Preprocessing</h3>
+<p>This first task allows two types of preprocessing through the parameter 'pipe':</p>
+<ul>
+<li><strong>'min'</strong>: .../preprocess/{directory}/{filename}?<strong>pipe=min</strong><br>
+cleaning (i.e. remove urls, emails, phone numbers, special characters) and language detection only</li>
+<li><strong>'max'</strong>: .../preprocess/{directory}/{filename}?<strong>pipe=max</strong><br>
+metadata extraction (urls, emails, phone numbers), emphasis markers (series of capital letters, exclamation and question marks) performed before cleaning and language detection so to allow further analysis</li>
+</ul>
+<p><strong>Default: 'min'.</strong></p>
+<p>Output: json ; also save a json file (clean_{filename}.json) which is stored in 'data/{directory}/dataset/'.</p>
+
+<h3>2. Modeling</h3>
+<p>This second task includes mandatory parameters:</p>
+<ul>
+<li><strong>'target'</strong>: the name of the field that contains the dependant variable - that is Y<br>
+E.g. .../model/spam/train?<strong>target=category</strong></li>
+<li><strong>'target_value'</strong>: the value to be encoded 1<br>
+E.g. .../model/spam/train?target=category&<strong>target_value=spam</strong></li>
+<li><strong>'factor'</strong>: the name of the field that contains the independant variable - that is X<br>
+E.g. .../model/spam/train?target=category&target_value=spam&<strong>factor=text</strong></li>
+</ul>
+
+<p>Customizable parameters are listed below:</p>
+<ul>
+<li><strong>'narrow_lang'</strong>: reduce the dataset to a specific language only, depending on the 'lang' field generated through the preprocessing phase<br>  
+E.g. .../model/spam/train?<strong>narrow_lang=en</strong><br>
+<strong>Default: 'none'</strong></li>
+<li><strong>'lemmatizer'</strong>: if True, lemmatize the text designated as factor using spaCy (En)<br>
+<strong>Default: False</strong></li>
+<li><strong>'vectorizer'</strong>: choose between TfidfVectorizer ['tfidf'] and CountVectorizer ['bow'] to be included in the modeling pipeline<br>
+E.g. .../model/spam/train?<strong>vectorizer=bow</strong><br>
+<strong>Default: 'tfidf'</strong></li>
+<li><strong>'resampler'</strong>: if True, resample the dataset in case the target distribution (sum of target value / sum of not target value) is less than 0.85 or more than 1.15<br>
+<strong>Default: True</strong></li>
+<li><strong>'classifiers'</strong>: define one ore more classifiers to be run - available are Naive Bayes algorithms: Multinomial ('MBN'), Bernoulli ('BNB') and Complement ('CNB')<br>
+E.g. .../model/spam/train?<strong>classifiers=BNB+MNB</strong><br>
+<strong>Default: 'BNB+CNB+MNB'</strong></li>
+<li><strong>'mode'</strong>: if <strong>'single'</strong>, one classifier has to be specified in the 'classifiers' parameter so the model can be saved with pickle in 'data/{directory}/model/'; otherwise, the listed classifiers are compared across various metrics<br>
+<strong>Default: 'benchmark'</strong></li>
+<li><strong>'metric'</strong>: define the core metric to select the best model among <strong>'accuracy', 'roc_auc_score', 'f1', 'precision' and 'recall'</strong><br>
+<strong>Default: 'f1'</strong> (especially relevant in a binary classification problem)</li>
+</ul>
+
+<p>Output: json ; also save a json file (benchmark.json) which is stored in 'data/{directory}/model/'.</p>
+<p>The output provides useful information to evaluate models as well as the quality of the dataset. In addition to the metrics mentioned above, there are given the train accuracy compared with the test accuracy as an <strong>overfitting indicator</strong>, the size of the train dataset, and the target ratio as an <strong>imbalance indicator</strong>.</p>
+<p>Hyperparameters for Naive Bayes algorithms are automatically tuned using <strong>GridSearchCV</strong>.</p>
+
+<h3>3. Classification</h3>
+<p>This final task delivers the tagged dataset via .../classify/{directory}/{filename}. There is no need to define paramaters: the ones used in the modeling phase are automatically retrieved from the 'benchmark' json file.</p>
+<p>Output: json</p>
+
+<h2>Author</h2>
+<p>Initial work: Stephanie BLANCHET, Data Scientist & Python Developer.<br>
+stephanie.blanchet.it@gmail.com</p>
+
+
+<h2>License</h2>
+
+This project is licensed under the MIT License - see [MIT](https://choosealicense.com/licenses/mit/) for details.
